@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RajGrocery</title>
+<style>
+  body { font-family: Arial; background:#fff8f0; margin:0; padding:20px; }
+  h1 { text-align:center; color:#2b2b2b; }
+  .product { background:white; margin:10px 0; padding:10px; border-radius:12px; box-shadow:0 0 5px #ddd; }
+  button { background:#007bff; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; }
+  button:hover { background:#0056b3; }
+  #cart, form { background:white; padding:10px; border-radius:12px; box-shadow:0 0 5px #ddd; margin-top:20px; }
+  input, textarea { width:100%; padding:8px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<h1>🛍️ RajGrocery</h1>
+
+<div id="product-list"></div>
+
+<div id="cart">
+  <h2>🛒 Cart</h2>
+  <ul id="cart-items"></ul>
+  <p id="total"></p>
+</div>
+
+<form id="orderForm">
+  <h3>📦 Customer Details</h3>
+  <input type="text" id="name" placeholder="Full Name" required>
+  <input type="text" id="phone" placeholder="Mobile Number" required>
+  <textarea id="address" placeholder="Full Address" required></textarea>
+  
+  <label><input type="radio" name="mode" value="pickup" checked> Pickup</label>
+  <label><input type="radio" name="mode" value="delivery"> Delivery (+10%)</label><br><br>
+
+  <button type="button" onclick="placeOrder()">Pay & Order via WhatsApp</button>
+</form>
+
+<script>
+const adminNumber = "916260993783"; // WhatsApp number with country code
+const upiId = "Q585873717@ybl"; // aapka UPI ID
+
+const products = [
+  { id:1, name:"Oil Khula (1kg)", price:155, stock:15, emoji:"🛢️" },
+  { id:2, name:"Sugar (1kg)", price:50, stock:10, emoji:"🍬" },
+  { id:3, name:"Oil Packet (1L)", price:120, stock:10, emoji:"🧴" },
+  { id:4, name:"Madhav Atta 5kg", price:180, stock:10, emoji:"🌾" },
+  { id:5, name:"Madhav Atta 1kg", price:30, stock:10, emoji:"🌾" }
+];
+
+const cart = [];
+const listDiv = document.getElementById('product-list');
+const cartItems = document.getElementById('cart-items');
+const totalText = document.getElementById('total');
+
+// Display products
+function renderProducts(){
+  listDiv.innerHTML="";
+  products.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'product';
+    div.innerHTML = `<h3>${p.emoji} ${p.name}</h3>
+      <p>Price: ₹${p.price}</p>
+      <p>Stock: ${p.stock}</p>
+      <button onclick="addToCart(${p.id})">Add to Cart</button>`;
+    listDiv.appendChild(div);
+  });
+}
+renderProducts();
+
+// Add to cart
+function addToCart(id){
+  const product = products.find(p=>p.id===id);
+  if(product.stock>0){
+    cart.push(product);
+    product.stock--;
+    renderCart();
+    renderProducts();
+  } else alert("Out of stock!");
+}
+
+// Render cart
+function renderCart(){
+  cartItems.innerHTML="";
+  let total=0;
+  cart.forEach(p=>{
+    total += p.price;
+    const li = document.createElement('li');
+    li.textContent = `${p.name} - ₹${p.price}`;
+    cartItems.appendChild(li);
+  });
+  totalText.textContent = `Total: ₹${total}`;
+}
+
+// Place order via WhatsApp + UPI
+function placeOrder(){
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+  const address = document.getElementById('address').value;
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+
+  if(!name || !phone || !address){ alert("Please fill all details!"); return; }
+
+  let total = cart.reduce((a,b)=>a+b.price,0);
+  if(mode === "delivery") total *= 1.10;
+
+  // UPI payment link
+  const upiLink = `upi://pay?pa=${upiId}&pn=RajGrocery&am=${total.toFixed(2)}&cu=INR&tn=Order by ${name}`;
+
+  // WhatsApp message
+  let msg = `RajGrocery Order\nCustomer: ${name}\nPhone: ${phone}\nAddress: ${address}\nMode: ${mode}\nItems:\n`;
+  cart.forEach(p => { msg += `- ${p.name} ₹${p.price}\n`; });
+  msg += `Total: ₹${total.toFixed(2)}\nPayment Link: ${upiLink}`;
+
+  const waLink = `https://wa.me/${adminNumber}?text=${encodeURIComponent(msg)}`;
+  window.open(waLink, "_blank");
+}
+</script>
+
+</body>
+</html>
